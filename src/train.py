@@ -1,4 +1,8 @@
 import paddle
+import paddle.vision.transforms as T
+import paddle.vision.transforms.functional as F
+import paddle.vision.datasets as datasets
+from paddle.io import DataLoader
 import numpy as np
 import pandas as pd
 from model import *
