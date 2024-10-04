@@ -1,8 +1,7 @@
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
-import paddle.vision.transforms as T
-
+import math
 
 def autopad(k, p=None, d=1):
     if d > 1:
@@ -10,7 +9,6 @@ def autopad(k, p=None, d=1):
     if p is None:
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]
     return p
-
 
 class Conv(nn.Layer):
     default_act = nn.Silu()
@@ -23,7 +21,6 @@ class Conv(nn.Layer):
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
 
-
 class Bottleneck(nn.Layer):
     def __init__(self, c1, c2, shortcut=True, g=1, k=(3, 3), e=0.5):
         super().__init__()
@@ -35,7 +32,6 @@ class Bottleneck(nn.Layer):
     def forward(self, x):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
-
 class C3k(nn.Layer):
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, k=3):
         super().__init__()
@@ -44,7 +40,6 @@ class C3k(nn.Layer):
 
     def forward(self, x):
         return self.m(x)
-
 
 class C3k2(nn.Layer):
     def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True):
@@ -63,7 +58,6 @@ class C3k2(nn.Layer):
             y1 = m(y1)
         return self.cv2(paddle.concat([y2, y1], axis=1))
 
-
 class Attention(nn.Layer):
     def __init__(self, dim, num_heads=8, attn_ratio=0.5):
         super().__init__()
@@ -81,74 +75,72 @@ class Attention(nn.Layer):
         B, C, H, W = x.shape
         N = H * W
         qkv = self.qkv(x)
-        qkv = qkv.reshape([B, self.num_heads, -1, N])
-        q, k, v = paddle.split(qkv, [self.key_dim, self.key_dim, self.head_dim], axis=2)
-
-        attn = paddle.matmul(q.transpose([0, 1, 3, 2]), k) * self.scale
+        qkv = qkv.reshape([B, N + N, self.key_dim * 2 + self.head_dim]).transpose([0, 2, 1])
+        q, k, v = qkv.split([self.key_dim, self.key_dim, self.head_dim], axis=1)
+        q = q * self.scale
+        attn = paddle.matmul(q, k, transpose_y=True)
         attn = F.softmax(attn, axis=-1)
-        x = paddle.matmul(v, attn.transpose([0, 1, 3, 2])).reshape([B, C, H, W]) + self.pe(x)
-        x = self.proj(x)
+        attn = paddle.matmul(attn, v)
+        attn = attn.transpose([0, 2, 1]).reshape([B, H, W, self.head_dim * self.num_heads])
+        attn = attn.transpose([0, 3, 1, 2])
+        x = self.proj(attn) + self.pe(x)
         return x
 
 
-class PSABlock(nn.Layer):
-    def __init__(self, c, attn_ratio=0.5, num_heads=4, shortcut=True):
-        super().__init__()
-        self.attn = Attention(c, attn_ratio=attn_ratio, num_heads=num_heads)
-        self.ffn = nn.Sequential(Conv(c, c * 2, 1), Conv(c * 2, c, 1, act=False))
-        self.add = shortcut
-
-    def forward(self, x):
-        x = x + self.attn(x) if self.add else self.attn(x)
-        x = x + self.ffn(x) if self.add else self.ffn(x)
-        return x
-
+def make_divisible(x, divisor):
+    return math.ceil(x / divisor) * divisor
 
 class C2PSA(nn.Layer):
-    def __init__(self, c1, c2, n=1, e=0.5):
+    def __init__(self, c1, c2, k=3, s=1, p=None, g=1, d=1, act=True):
         super().__init__()
-        assert c1 == c2, "C2PSA requires c1 and c2 to be the same"
-        self.c = int(c1 * e)
-        self.cv1 = nn.Conv2D(c1, 2 * self.c, 1, 1)
-        self.cv2 = nn.Conv2D(2 * self.c, c1, 1, 1)
-
-        self.m = nn.Sequential(*[PSABlock(self.c) for _ in range(n)])
+        c_ = make_divisible(c2 * 0.5, 8)
+        self.conv = Conv(c1, c_, k, s, autopad(k, p, d), g, d, act)
+        self.psa = Attention(c_)
 
     def forward(self, x):
-        a, b = paddle.split(self.cv1(x), [self.c, self.c], axis=1)
-        b = self.m(b)
-        return self.cv2(paddle.concat([a, b], axis=1))
+        x = self.conv(x)
+        x = self.psa(x)
+        return x
 
 
 class Classify(nn.Layer):
     def __init__(self, c1, num_classes):
         super().__init__()
-        self.cls = nn.Linear(c1, num_classes)
+        self.fc = nn.Linear(c1, num_classes)
 
     def forward(self, x):
-        x = paddle.mean(x, axis=[2, 3])
-        return self.cls(x)
+        if len(x.shape) == 4:
+            x = paddle.mean(x, axis=[2, 3])
+        return self.fc(x)
 
 
 class self_net(nn.Layer):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes=2):
         super().__init__()
-        self.backbone = nn.Sequential(
-            Conv(3, 64, 3, 2),
-            Conv(64, 128, 3, 2),
-            C3k2(128, 256, 2, False, 0.25),
-            Conv(256, 256, 3, 2),
-            C3k2(256, 512, 2, False, 0.25),
-            Conv(512, 512, 3, 2),
-            C3k2(512, 512, 2, True),
-            Conv(512, 1024, 3, 2),
-            C3k2(1024, 1024, 2, True),
-            C2PSA(1024, 1024),
-        )
-        self.head = Classify(1024, num_classes)
+        c1, c2, c3, c4, c5 = 64, 128, 256, 512, 1024
+        self.stem = Conv(3, c1, 3, 2)
+        self.conv_1 = Conv(c1, c2, 3, 2)
+        self.c3k2_1 = C3k2(c2, c3, 2, False, 0.25)
+        self.conv_2 = Conv(c3, c4, 3, 2)
+        self.c3k2_2 = C3k2(c4, c5, 2, False, 0.25)
+        self.conv_3 = Conv(c5, c5, 3, 2)
+        self.c3k2_3 = C3k2(c5, c5, 2, True)
+        self.conv_4 = Conv(c5, c5, 3, 2)
+        self.c3k2_4 = C3k2(c5, c5, 2, True)
+        self.c2psa = C2PSA(c5, c5)
+        self.head = Classify(c4, num_classes)
 
     def forward(self, x):
-        x = self.backbone(x)
+        x = self.stem(x)
+        x = self.conv_1(x)
+        x = self.c3k2_1(x)
+        x = self.conv_2(x)
+        x = self.c3k2_2(x)
+        x = self.conv_3(x)
+        x = self.c3k2_3(x)
+        x = self.conv_4(x)
+        x = self.c3k2_4(x)
+        x = self.c2psa(x)
         x = self.head(x)
         return x
 
