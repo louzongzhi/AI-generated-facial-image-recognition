@@ -143,22 +143,22 @@ class self_net(nn.Layer):
 
     def forward(self, x):
         # backbone
-        x = self.x_0(x)
-        x = self.x_1(x)
-        x = self.x_2(x)
-        x = self.x_3(x)
-        x = self.x_4(x)
-        x = self.x_5(x)
-        x = self.x_6(x)
-        x = self.x_7(x)
-        x = self.x_8(x)
-        x = self.x_9(x)
+        x_0 = self.x_0(x)
+        x_1 = self.x_1(x_0)
+        x_2 = self.x_2(x_1)
+        x_3 = self.x_3(x_2)
+        x_4 = self.x_4(x_3)
+        x_5 = self.x_5(x_4)
+        x_6 = self.x_6(x_5)
+        x_7 = self.x_7(x_6)
+        x_8 = self.x_8(x_7)
+        x_9 = self.x_9(x_8)
 
         # neck
         pass
 
         # head
-        x = self.final(x)
+        x = self.final(x_9)
 
         return x
 
