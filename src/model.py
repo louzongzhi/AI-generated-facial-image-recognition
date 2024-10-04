@@ -136,8 +136,6 @@ class self_net(nn.Layer):
         self.x_8 = C3k2(c5, c5, 2, True)
         self.x_9 = C2PSA(c5, c5)
 
-        # neck
-
         # head
         self.final = Classify(c5, num_classes)
 
@@ -153,8 +151,6 @@ class self_net(nn.Layer):
         x_7 = self.x_7(x_6)
         x_8 = self.x_8(x_7)
         x_9 = self.x_9(x_8)
-
-        # neck
 
         # head
         x = self.final(x_9)
