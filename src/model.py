@@ -123,31 +123,23 @@ class self_net(nn.Layer):
     def __init__(self, num_classes=2):
         super().__init__()
         c1, c2, c3, c4, c5 = 64, 128, 256, 512, 1024
-        self.stem = Conv(3, c1, 3, 2)
-        self.conv_1 = Conv(c1, c2, 3, 2)
-        self.c3k2_1 = C3k2(c2, c3, 2, False, 0.25)
-        self.conv_2 = Conv(c3, c3, 3, 2)
-        self.c3k2_2 = C3k2(c3, c4, 2, False, 0.25)
-        self.conv_3 = Conv(c4, c4, 3, 2)
-        self.c3k2_3 = C3k2(c4, c4, 2, True)
-        self.conv_4 = Conv(c4, c5, 3, 2)
-        self.c3k2_4 = C3k2(c5, c5, 2, True)
-        self.c2psa = C2PSA(c5, c5)
+        self.backbone = nn.Sequential(
+            Conv(3, c1, 3, 2),
+            Conv(c1, c2, 3, 2),
+            C3k2(c2, c3, 2, False, 0.25),
+            Conv(c3, c3, 3, 2),
+            C3k2(c3, c4, 2, False, 0.25),
+            Conv(c4, c4, 3, 2),
+            C3k2(c4, c4, 2, True),
+            Conv(c4, c5, 3, 2),
+            C3k2(c5, c5, 2, True),
+            C2PSA(c5, c5),
+        )
         self.head = Classify(c5, num_classes)
 
     def forward(self, x):
-        x = self.stem(x)
-        x = self.conv_1(x)
-        x = self.c3k2_1(x)
-        x = self.conv_2(x)
-        x = self.c3k2_2(x)
-        x = self.conv_3(x)
-        x = self.c3k2_3(x)
-        x = self.conv_4(x)
-        x = self.c3k2_4(x)
-        x = self.c2psa(x)
-        x = self.head(x)
-        return x
+        x = self.backbone(x)
+        return self.head(x)
 
 def build_model():
     model = self_net(num_classes=2)
