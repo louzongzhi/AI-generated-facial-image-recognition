@@ -10,6 +10,7 @@ def autopad(k, p=None, d=1):
         p = k // 2 if isinstance(k, int) else [x // 2 for x in k]
     return p
 
+
 class Conv(nn.Layer):
     default_act = nn.Silu()
     def __init__(self, c1, c2, k=1, s=1, p=None, g=1, d=1, act=True):
@@ -20,6 +21,7 @@ class Conv(nn.Layer):
 
     def forward(self, x):
         return self.act(self.bn(self.conv(x)))
+
 
 class Bottleneck(nn.Layer):
     def __init__(self, c1, c2, shortcut=True, g=1, k=(3, 3), e=0.5):
@@ -32,6 +34,7 @@ class Bottleneck(nn.Layer):
     def forward(self, x):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
+
 class C3k(nn.Layer):
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, k=3):
         super().__init__()
@@ -40,6 +43,7 @@ class C3k(nn.Layer):
 
     def forward(self, x):
         return self.m(x)
+
 
 class C3k2(nn.Layer):
     def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True):
@@ -57,6 +61,7 @@ class C3k2(nn.Layer):
         for m in self.m:
             y1 = m(y1)
         return self.cv2(paddle.concat([y2, y1], axis=1))
+
 
 class Attention(nn.Layer):
     def __init__(self, dim, num_heads=8, attn_ratio=0.5):
@@ -86,9 +91,9 @@ class Attention(nn.Layer):
         x = self.proj(attn) + self.pe(x)
         return x
 
-
 def make_divisible(x, divisor):
     return math.ceil(x / divisor) * divisor
+
 
 class C2PSA(nn.Layer):
     def __init__(self, c1, c2, k=3, s=1, p=None, g=1, d=1, act=True):
