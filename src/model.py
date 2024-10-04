@@ -2,9 +2,6 @@ import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
 import paddle.vision.transforms as T
-from paddle.vision.models import resnet101
-import numpy as np
-import pandas as pd
 
 
 def autopad(k, p=None, d=1):
