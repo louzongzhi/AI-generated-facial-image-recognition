@@ -50,7 +50,7 @@ class C3k2(nn.Layer):
     def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True):
         super().__init__()
         c_ = int(c2 * e)
-        self.cv1 = Conv(c1, 2 * c_, 1, 1)
+        self.cv1 = Conv(c1, c_, 1, 1)
         self.cv2 = Conv((2 + n) * c_, c2, 1)
         if c3k:
             self.m = nn.Sequential(*[C3k(c_, c_, 2, shortcut, g) for _ in range(n)])
