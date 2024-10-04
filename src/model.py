@@ -58,9 +58,10 @@ class C3k2(nn.Layer):
             self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g) for _ in range(n)])
 
     def forward(self, x):
-        y = paddle.split(self.cv1(x), 2, axis=1)
-        y.extend(m(y[-1]) for m in self.m)
-        return self.cv2(paddle.concat(y, axis=1))
+        y1, y2 = paddle.split(self.cv1(x), 2, axis=1)
+        for m in self.m:
+            y1 = m(y1)
+        return self.cv2(paddle.concat([y2, y1], axis=1))
 
 
 class Attention(nn.Layer):
