@@ -6,6 +6,7 @@ from paddle.vision.models import resnet101
 import numpy as np
 import pandas as pd
 
+
 class ResNet101(nn.Layer):
     def __init__(self, num_classes=2):
         super(ResNet101, self).__init__()
