@@ -158,9 +158,17 @@ def build_model():
 
 def train(model, data, epochs=100, batch_size=64, verbose=1):
     model.prepare(
-        paddle.optimizer.Adam(learning_rate=0.001, parameters=model.parameters()),
+        paddle.optimizer.Adam(
+            learning_rate=0.001,
+            parameters=model.parameters(),
+        ),
         paddle.nn.CrossEntropyLoss(),
         paddle.metric.Accuracy(topk=(1, 5))
     )
-    model.fit(data, epochs=epochs, batch_size=batch_size, verbose=verbose)
+    model.fit(
+        data,
+        epochs=epochs,
+        batch_size=batch_size,
+        verbose=verbose
+    )
     return model
