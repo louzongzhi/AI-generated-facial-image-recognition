@@ -27,7 +27,7 @@ class Conv(nn.Layer):
 class Bottleneck(nn.Layer):
     def __init__(self, c1, c2, shortcut=True, g=1, k=(3, 3), e=0.5):
         super().__init__()
-        c_ = int(c2 * e)  # hidden channels
+        c_ = int(c2 * e)
         self.cv1 = Conv(c1, c_, k[0], 1)
         self.cv2 = Conv(c_, c2, k[1], 1, g=g)
         self.add = shortcut and c1 == c2
@@ -39,7 +39,7 @@ class Bottleneck(nn.Layer):
 class C3k(nn.Layer):
     def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, k=3):
         super().__init__()
-        c_ = int(c2 * e)  # hidden channels
+        c_ = int(c2 * e)
         self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)])
 
     def forward(self, x):
@@ -49,7 +49,7 @@ class C3k(nn.Layer):
 class C3k2(nn.Layer):
     def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True):
         super().__init__()
-        c_ = int(c2 * e)  # hidden channels
+        c_ = int(c2 * e)
         self.cv1 = Conv(c1, 2 * c_, 1, 1)
         self.cv2 = Conv((2 + n) * c_, c2, 1)
         if c3k:
