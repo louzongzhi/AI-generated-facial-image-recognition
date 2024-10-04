@@ -142,7 +142,7 @@ class self_net(nn.Layer):
             C3k2(512, 512, 2, True),
             Conv(512, 1024, 3, 2),
             C3k2(1024, 1024, 2, True),
-            C2PSA(1024),
+            C2PSA(1024, 1024),
         )
         self.head = Classify(1024, num_classes)
 
