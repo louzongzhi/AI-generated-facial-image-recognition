@@ -123,23 +123,44 @@ class self_net(nn.Layer):
     def __init__(self, num_classes=2):
         super().__init__()
         c1, c2, c3, c4, c5 = 64, 128, 256, 512, 1024
-        self.backbone = nn.Sequential(
-            Conv(3, c1, 3, 2),
-            Conv(c1, c2, 3, 2),
-            C3k2(c2, c3, 2, False, 0.25),
-            Conv(c3, c3, 3, 2),
-            C3k2(c3, c4, 2, False, 0.25),
-            Conv(c4, c4, 3, 2),
-            C3k2(c4, c4, 2, True),
-            Conv(c4, c5, 3, 2),
-            C3k2(c5, c5, 2, True),
-            C2PSA(c5, c5),
-        )
-        self.head = Classify(c5, num_classes)
+
+        # backbone
+        self.x_0 = Conv(3, c1, 3, 2)
+        self.x_1 = Conv(c1, c2, 3, 2)
+        self.x_2 = C3k2(c2, c3, 2, False, 0.25)
+        self.x_3 = Conv(c3, c3, 3, 2)
+        self.x_4 = C3k2(c3, c4, 2, False, 0.25)
+        self.x_5 = Conv(c4, c4, 3, 2)
+        self.x_6 = C3k2(c4, c4, 2, True)
+        self.x_7 = Conv(c4, c5, 3, 2)
+        self.x_8 = C3k2(c5, c5, 2, True)
+        self.x_9 = C2PSA(c5, c5)
+
+        # neck
+
+        # head
+        self.final = Classify(c5, num_classes)
 
     def forward(self, x):
-        x = self.backbone(x)
-        return self.head(x)
+        # backbone
+        x = self.x_0(x)
+        x = self.x_1(x)
+        x = self.x_2(x)
+        x = self.x_3(x)
+        x = self.x_4(x)
+        x = self.x_5(x)
+        x = self.x_6(x)
+        x = self.x_7(x)
+        x = self.x_8(x)
+        x = self.x_9(x)
+
+        # neck
+        pass
+
+        # head
+        x = self.final(x)
+
+        return x
 
 def build_model():
     model = self_net(num_classes=2)
