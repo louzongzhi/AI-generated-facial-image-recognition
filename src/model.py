@@ -12,6 +12,7 @@ class self_net(nn.Layer):
         super(self_net, self).__init__()
         self.backbone = resnet101(pretrained=True)
         self.fc = nn.Linear(2048, num_classes)
+
     def forward(self, x):
         x = self.backbone(x)
         x = self.fc(x)
