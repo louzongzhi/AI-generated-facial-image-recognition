@@ -133,7 +133,7 @@ class self_net(nn.Layer):
         self.conv_4 = Conv(c5, c5, 3, 2)
         self.c3k2_4 = C3k2(c5, c5, 2, True)
         self.c2psa = C2PSA(c5, c5)
-        self.head = Classify(c4, num_classes)
+        self.head = Classify(c5, num_classes)
 
     def forward(self, x):
         x = self.stem(x)
