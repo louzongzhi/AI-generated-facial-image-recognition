@@ -155,7 +155,6 @@ class self_net(nn.Layer):
         x_9 = self.x_9(x_8)
 
         # neck
-        pass
 
         # head
         x = self.final(x_9)
