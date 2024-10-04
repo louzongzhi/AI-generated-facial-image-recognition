@@ -7,9 +7,9 @@ import numpy as np
 import pandas as pd
 
 
-class ResNet101(nn.Layer):
+class self_net(nn.Layer):
     def __init__(self, num_classes=2):
-        super(ResNet101, self).__init__()
+        super(self_net, self).__init__()
         self.backbone = resnet101(pretrained=True)
         self.fc = nn.Linear(2048, num_classes)
     def forward(self, x):
@@ -18,7 +18,7 @@ class ResNet101(nn.Layer):
         return x
 
 def build_model():
-    model = ResNet101(num_classes=2)
+    model = self_net(num_classes=2)
     model = paddle.Model(model)
     return model
 
