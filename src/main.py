@@ -8,11 +8,6 @@ from paddle.vision.models import resnet101
 
 model = paddle.load('src')
 model = paddle.Model(model)
-model.prepare(
-    paddle.optimizer.Adam(learning_rate=0.001, parameters=model.parameters()),
-    paddle.nn.CrossEntropyLoss(),
-    paddle.metric.Accuracy(topk=(1, 5))
-)
 
 model.eval()
 
