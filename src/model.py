@@ -158,8 +158,10 @@ class self_net(nn.Layer):
         return x
 
 def build_model():
-    model = self_net(num_classes=2)
-    model = paddle.Model(model)
+    net = self_net(num_classes=2)
+    inputs = paddle.static.InputSpec([None, 3, 224, 224], 'float32', 'x')
+    labels = paddle.static.InputSpec([0, 1], 'int64', 'label')
+    model = paddle.Model(net, inputs, labels)
     return model
 
 def train(model, data, epochs=100, batch_size=64, verbose=1):
