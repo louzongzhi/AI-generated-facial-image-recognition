@@ -3,15 +3,17 @@ import random
 import numpy as np
 import torch
 from torchvision import transforms
-from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
+from torch.utils.data import Dataset, DataLoader, random_split, WeightedRandomSampler
 from PIL import Image
 
+
 class RealFakeDataLoader:
-    def __init__(self, data_path, cropSize, batch_size, num_threads, isTrain=True):
+    def __init__(self, data_path, cropSize, batch_size, num_threads, validation_split=0.2, isTrain=True):
         self.data_path = data_path
         self.cropSize = cropSize
         self.batch_size = batch_size
         self.num_threads = num_threads
+        self.validation_split = validation_split
         self.isTrain = isTrain
 
         self.real_list = self.recursively_read(os.path.join(data_path, '0'))
@@ -20,8 +22,17 @@ class RealFakeDataLoader:
         random.shuffle(self.total_list)
 
         self.mean, self.std = self.calculate_mean_std()
-        self.dataset = self.create_dataset()
-        self.dataloader = self.create_dataloader()
+
+        if self.isTrain:
+            train_size = int((1 - self.validation_split) * len(self.total_list))
+            val_size = len(self.total_list) - train_size
+            self.train_dataset, self.val_dataset = random_split(self.total_list, [train_size, val_size])
+        else:
+            self.train_dataset = self.total_list
+
+        self.train_dataloader = self.create_dataloader(self.train_dataset, isTrain=True)
+        if self.val_dataset:
+            self.val_dataloader = self.create_dataloader(self.val_dataset, isTrain=False)
 
     def recursively_read(self, rootdir, exts=["png", "jpg", "JPEG", "jpeg"]):
         out = []
@@ -34,13 +45,13 @@ class RealFakeDataLoader:
     def create_dataset(self):
         return RealFakeDataset(self.total_list, self.cropSize, self.isTrain, self.mean, self.std)
 
-    def create_dataloader(self):
-        if self.isTrain:
-            sampler = self.get_bal_sampler()
+    def create_dataloader(self, dataset, isTrain):
+        if isTrain:
+            sampler = self.get_bal_sampler(dataset)
         else:
             sampler = None
         return DataLoader(
-            self.dataset,
+            RealFakeDataset(dataset, self.cropSize, isTrain, self.mean, self.std),
             batch_size=self.batch_size,
             shuffle=(sampler is None),
             sampler=sampler,
