@@ -10,6 +10,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import time
+import multiprocessing
+multiprocessing.set_start_method('spawn')
 
 def train(model, train_loader, val_loader, num_epochs, device, writer, save_path):
     criterion = nn.CrossEntropyLoss()
