@@ -11,9 +11,8 @@ from tqdm import tqdm
 from pprint import pprint
 from torch.utils import data
 
-from dataset import load_dataset
+from model import self_net
 from loss import get_loss
-from model import load_model
 
 
 #----------------------------------------------------------------------------#

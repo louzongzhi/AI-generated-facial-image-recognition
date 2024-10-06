@@ -310,17 +310,3 @@ class self_net(nn.Module):
 
         out = self.dropout(embedding)
         return self.fc(out)
-
-
-#--------------------------------------------------------------------------------------------------------------------#
-
-
-MODELS = {
-    "self_net": self_net
-}
-
-
-def load_model(name="self_net"):
-    assert name in MODELS.keys(), f"Model name can only be one of {MODELS.keys()}."
-    print(f"Using model: '{name}'")
-    return MODELS[name]

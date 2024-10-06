@@ -8,7 +8,7 @@ from albumentations.pytorch.transforms import ToTensorV2
 
 
 class AbstractDataset(VisionDataset):
-    def __init__(self, cfg, seed=2022, transforms=None, transform=None, target_transform=None):
+    def __init__(self, cfg, seed=42, transforms=None, transform=None, target_transform=None):
         super(AbstractDataset, self).__init__(cfg['root'], transforms=transforms, transform=transform, target_transform=target_transform)
 
         np.random.seed(seed)
