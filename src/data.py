@@ -90,6 +90,7 @@ class RealFakeDataLoader:
         std /= nb_samples
         return mean, std
 
+
 class RealFakeDataset(Dataset):
     def __init__(self, file_list, cropSize, isTrain, mean=None, std=None, transform=None):
         self.file_list = file_list
