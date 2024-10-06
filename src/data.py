@@ -113,18 +113,3 @@ class RealFakeDataset(Dataset):
         img = Image.open(img_path).convert("RGB")
         img = self.transform(img)
         return img, label
-
-# 使用示例
-data_path = 'data'
-cropSize = 256
-batch_size = 32
-num_threads = 4
-
-# 初始化数据加载器
-data_loader = RealFakeDataLoader(data_path, cropSize, batch_size, num_threads)
-
-# 打印数据加载器中的数据
-for i, (img, label) in enumerate(data_loader):
-    print(f"Image {i}: {img.shape}, Label: {label}")
-    if i == 5:
-        break
