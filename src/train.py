@@ -1,5 +1,3 @@
-# 训练图像分类模型，使用PyTorch框架，并使用GPU加速，同时支持多GPU训练，使用Adam优化器，学习率为0.001，使用交叉熵损失函数，训练100个epoch，每个epoch训练1000个batch，每个batch大小为32，使用数据增强技术，包括随机裁剪、随机水平翻转、随机颜色变换等，使用验证集进行模型评估，并保存最佳模型。，同时支持保存训练过程中的损失和准确率曲线，并使用TensorBoard进行可视化。，模型是model.py的self_net，data的RealFakeDataLoader可以加载数据，if __name__ == '__main__':data_path = 'path_to_your_data'\cropSize = 224\batch_size = 32\num_threads = 4\data_loader = RealFakeDataLoader(data_path, cropSize, batch_size, num_threads, validation_split)
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
