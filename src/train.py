@@ -98,7 +98,8 @@ if __name__ == '__main__':
     # Data
     data_path = 'data'
     data_loader = RealFakeDataLoader(data_path, cropSize, batch_size, num_threads, validation_split)
-    train_loader, test_loader = data_loader.create_dataloader(isTrain=isTrain)
+    train_loader = data_loader.train_dataloader
+    test_loader = data_loader.val_dataloader
 
     # Model
     net = self_net(num_classes=num_classes)
