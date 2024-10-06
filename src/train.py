@@ -1,7 +1,7 @@
 from data import RealFakeDataLoader
 
 
-data_path = 'daata'
+data_path = 'data'
 cropSize = 256
 batch_size = 32
 num_threads = 4
