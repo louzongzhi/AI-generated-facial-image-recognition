@@ -82,8 +82,10 @@ class PathSpecificLayer(nn.Module):
 #---------------------------------------------------------------------------------------------------------------------#
 
 class self_net(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes=2):
         super(self_net, self).__init__()
+        self.num_classes = num_classes
+
         self.efficientnet_path = EfficientNetPath()
         self.resnet_path = ResNetPath()
         self.inception_path = InceptionPath()
