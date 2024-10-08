@@ -36,9 +36,9 @@ def predict_and_save(model, test_dir, output_csv):
             writer.writerow([os.path.splitext(image_name)[0], prediction])
 
 def main():
-    model_path = 'src/model.pth'
-    test_dir = '/testdata'
-    output_csv = 'cla_pre.csv'
+    model_path = './src/model.pth'
+    test_dir = './testdata'
+    output_csv = './cla_pre.csv'
     model = load_model(model_path)
     predict_and_save(model, test_dir, output_csv)
 
