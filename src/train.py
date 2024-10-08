@@ -32,7 +32,7 @@ class Trainer:
         self.optimizer = optimizer
         self.device = device
         self.best_accuracy = 0.0
-        self.best_model_path = 'src/model.pth'
+        self.best_model_path = './src/model.pth'
 
     def train(self, num_epochs):
         for epoch in range(num_epochs):
