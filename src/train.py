@@ -75,7 +75,7 @@ class Trainer:
             print(f'Saved new best model with accuracy: {self.best_accuracy}%')
 
 def main():
-    path_to_dataset = 'data'
+    path_to_dataset = './data'
     batch_size = 32
     num_epochs = 100
 
