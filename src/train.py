@@ -77,7 +77,7 @@ class Trainer:
 def main():
     path_to_dataset = 'data'
     batch_size = 32
-    num_epochs = 10
+    num_epochs = 100
 
     dataset_loader = DatasetLoader(path_to_dataset, batch_size)
     dataset_loader.load_data()
