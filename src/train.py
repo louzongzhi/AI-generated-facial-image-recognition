@@ -1,124 +1,96 @@
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchvision import transforms
-from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import DataLoader, random_split
+from torchvision import datasets, transforms
 from model import self_net
-from data import RealFakeDataLoader
-import os
-import numpy as np
-import matplotlib.pyplot as plt
-import time
-import multiprocessing
-multiprocessing.set_start_method('spawn')
 
+class DatasetLoader:
+    def __init__(self, path, batch_size, validation_ratio=0.2):
+        self.path = path
+        self.batch_size = batch_size
+        self.validation_ratio = validation_ratio
+        self.transform = transforms.Compose([
+            transforms.Resize((64, 64)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
 
-def plot_acc(test_acc_list):
-    plt.plot(test_acc_list)
-    plt.title('Test Accuracy over Epochs')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy')
-    plt.show()
+    def load_data(self):
+        dataset = datasets.ImageFolder(root=self.path, transform=self.transform)
+        dataset_size = len(dataset)
+        train_size = int((1 - self.validation_ratio) * dataset_size)
+        validation_size = dataset_size - train_size
+        train_dataset, validation_dataset = random_split(dataset, [train_size, validation_size])
+        self.train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+        self.validation_loader = DataLoader(validation_dataset, batch_size=self.batch_size, shuffle=False)
 
-def save_model(model, path):
-    torch.save(model.state_dict(), path)
-    print(f'Model saved to {path}')
+class Trainer:
+    def __init__(self, net, train_loader, validation_loader, criterion, optimizer, device):
+        self.net = net
+        self.train_loader = train_loader
+        self.validation_loader = validation_loader
+        self.criterion = criterion
+        self.optimizer = optimizer
+        self.device = device
+        self.best_accuracy = 0.0
+        self.best_model_path = 'src/model.pth'
 
-def test(model, test_loader, device):
-    model.eval()
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for data in test_loader:
-            inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
-            outputs = model(inputs)
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-    print(f'Accuracy of the network on the test images: {100 * correct / total}%')
+    def train(self, num_epochs):
+        for epoch in range(num_epochs):
+            self.net.train()
+            running_loss = 0.0
+            for i, data in enumerate(self.train_loader, 0):
+                inputs, labels = data
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
 
-def train(model, train_loader, val_loader, num_epochs, device, writer, save_path):
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-    best_acc = 0.0
-    for epoch in range(num_epochs):
-        model.train()
-        running_loss = 0.0
+                self.optimizer.zero_grad()
+                outputs = self.net(inputs)
+                loss = self.criterion(outputs, labels)
+                loss.backward()
+                self.optimizer.step()
+
+                running_loss += loss.item()
+                if i % 100 == 99:
+                    print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 100:.3f}')
+                    running_loss = 0.0
+
+            self.validate()
+
+    def validate(self):
+        self.net.eval()
         correct = 0
         total = 0
-        for i, data in enumerate(train_loader, 0):
-            inputs, labels = data
-            inputs, labels = inputs.to(device), labels.to(device)
-            optimizer.zero_grad()
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-            _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-            running_loss += loss.item()
-            if i % 100 == 99:
-                print(f'Epoch [{epoch + 1}/{num_epochs}], Step [{i + 1}/{len(train_loader)}], Loss: {running_loss / 100:.4f}')
-                running_loss = 0.0
-        
-        val_loss, val_correct, val_total = 0.0, 0, 0
-        model.eval()
         with torch.no_grad():
-            for data in val_loader:
-                inputs, labels = data
-                inputs, labels = inputs.to(device), labels.to(device)
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                val_loss += loss.item()
+            for data in self.validation_loader:
+                images, labels = data
+                images, labels = images.to(self.device), labels.to(self.device)
+                outputs = self.net(images)
                 _, predicted = torch.max(outputs.data, 1)
-                val_total += labels.size(0)
-                val_correct += (predicted == labels).sum().item()
-        
-        val_accuracy = val_correct / val_total
-        writer.add_scalar('Validation/Loss', val_loss / len(val_loader), epoch)
-        writer.add_scalar('Validation/Accuracy', val_accuracy, epoch)
-        print(f'Epoch [{epoch + 1}/{num_epochs}] Validation Accuracy: {val_accuracy:.4f}')
-        
-        if val_accuracy > best_acc:
-            best_acc = val_accuracy
-            save_model(model, os.path.join(save_path, 'best_model.pth'))
-            print(f'Saving best model with accuracy: {best_acc:.4f}')
-    
-    return best_acc
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        accuracy = 100 * correct / total
+        print(f'Accuracy of the network on the validation images: {accuracy}%')
+        if accuracy > self.best_accuracy:
+            self.best_accuracy = accuracy
+            torch.save(self.net.state_dict(), self.best_model_path)
+            print(f'Saved new best model with accuracy: {self.best_accuracy}%')
 
 def main():
-    batch_size = 128
-    learning_rate = 0.001
-    num_epochs = 100
-    num_classes = 2
-    cropSize = 224
-    num_workers = 4
-    isTrain = True
+    path_to_dataset = 'data'
+    batch_size = 32
+    num_epochs = 10
+
+    dataset_loader = DatasetLoader(path_to_dataset, batch_size)
+    dataset_loader.load_data()
+
+    net = self_net()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    net.to(device)
 
-    data_path = 'data'
-    data_loader = RealFakeDataLoader(data_path, cropSize, batch_size, num_workers)
-    train_loader = data_loader.train_dataloader
-    val_loader = data_loader.val_dataloader
+    criterion = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(net.parameters(), lr=0.001)
 
-    net = self_net(num_classes=num_classes).to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(net.parameters(), lr=learning_rate)
-
-    writer = SummaryWriter()
-    save_path = 'src'
-    best_acc = train(net, train_loader, val_loader, num_epochs, device, writer, save_path)
-    writer.close()
-
-    plot_acc([best_acc])
-
-    save_model(net, os.path.join(save_path, 'final_model.pth'))
-
-    test(net, test_loader, device)
-
+    trainer = Trainer(net, dataset_loader.train_loader, dataset_loader.validation_loader, criterion, optimizer, device)
+    trainer.train(num_epochs)
 
 if __name__ == '__main__':
     main()
