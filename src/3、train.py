@@ -136,7 +136,7 @@ def main():
 
     for epoch in range(1, EPOCHS + 1):
         train_loss, train_acc = train(model, DEVICE, train_loader, optimizer, epoch, model_ema)
-        val_list, pred_list, val_loss, val_acc = val(model, DEVICE, test_loader)
+        val_list, pred_list, val_loss, val_acc = val(model, DEVICE, val_loader)
 
         # 保存准确率
         epoch_list.append(epoch)
