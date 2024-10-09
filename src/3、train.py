@@ -11,14 +11,8 @@ from torchvision import datasets, transforms
 from timm.utils import accuracy, AverageMeter, ModelEma
 from timm.models.efficientformer_v2 import efficientformerv2_l
 from timm.loss import SoftTargetCrossEntropy
-import os
-import matplotlib.pyplot as plt
-from timm.utils import accuracy, AverageMeter, ModelEma
 from sklearn.metrics import classification_report
 from timm.data.mixup import Mixup
-from timm.loss import SoftTargetCrossEntropy
-from timm.models.efficientformer_v2 import efficientformerv2_l
-from torchvision import datasets
 
 # 环境设置
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
