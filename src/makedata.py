@@ -15,7 +15,7 @@ else:
 
 from sklearn.model_selection import train_test_split
 
-trainval_files, val_files = train_test_split(image_list, test_size=0.2, random_state=42)
+trainval_files, val_files = train_test_split(image_list, train_size=0.8, test_size=0.2, random_state=42)
 
 train_dir='train'
 val_dir='val'
